@@ -1,0 +1,47 @@
+org: basebotproject
+app: webhook
+service: webhook
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  httpApi:
+    cors:
+      allowMethods:
+        - 'GET'
+        - 'POST'
+        - 'PUT'
+        - 'DELETE'
+      allowHeaders:
+        - 'Content-Type'
+        - 'Authorization'
+      allowOrigins:
+        - '*'
+      allowCredentials: false
+
+constructs:
+  whatsappConsumer:
+    type: queue
+    worker:
+      handler: ./src/whatsappConsumer.handler
+    environment:
+      MONGODB_CONNECTION_STRING: mongodb://mbadmin:MDB@Z053@dockerdb.mycodes.cloud/
+      S3_KEY: AKIA3O7DVYZUNUC74G43
+      S3_SECRET: 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
+      S3_REGION: us-west-2
+      WA_API_KEY: rpMJJrUpMvKyRfbzGOfhoHJUAK
+      IS_SERVERLESS: true
+
+functions:
+  whatsappWebhook:
+    handler: ./src/app.handler
+    events:
+      - httpApi:
+          method: '*'
+          path: /wa-webhook/{proxy+}
+    environment:
+      QUEUE_URL: ${construct:whatsappConsumer.queueUrl}
+
+plugins:
+  - serverless-lift
